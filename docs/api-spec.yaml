@@ -1,0 +1,333 @@
+openapi: 3.0.3
+info:
+  title: Smart Collaboration SaaS Platform API
+  version: 1.0.0
+  description: |
+    Multi-tenant SaaS API with AI-assisted task management and third-party integrations.
+    All endpoints require JWT authentication and X-Tenant-ID header unless marked public.
+
+servers:
+  - url: https://api.yourdomain.com/api/v1
+    description: Production
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+security:
+  - BearerAuth: []
+  - TenantHeader: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    TenantHeader:
+      type: apiKey
+      in: header
+      name: X-Tenant-ID
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+        meta:
+          type: object
+          properties:
+            page: { type: integer }
+            limit: { type: integer }
+            total: { type: integer }
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: TASK_NOT_FOUND
+            message:
+              type: string
+              example: Task not found
+
+    Task:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        status:
+          type: string
+          enum: [todo, in_progress, review, done]
+        priority:
+          type: string
+          enum: [low, medium, high]
+        due_date: { type: string, format: date-time }
+        assignee_id: { type: string, format: uuid }
+        ai_suggestion:
+          type: object
+          properties:
+            deadline: { type: string }
+            dependencies: { type: array, items: { type: string } }
+            draft_description: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role:
+          type: string
+          enum: [admin, member, viewer]
+        created_at: { type: string, format: date-time }
+
+paths:
+  # ─── AUTH ───────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user and tenant
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, tenant_name]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                tenant_name: { type: string, minLength: 2 }
+      responses:
+        '201':
+          description: User and tenant created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuccessResponse' }
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive JWT tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: JWT tokens issued
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          access_token: { type: string }
+                          refresh_token: { type: string }
+                          expires_in: { type: integer, example: 900 }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200':
+          description: New token pair issued (old refresh token invalidated)
+
+  # ─── TASKS ──────────────────────────────────────────────────────────
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks for the authenticated tenant
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [todo, in_progress, review, done] }
+        - name: priority
+          in: query
+          schema: { type: string, enum: [low, medium, high] }
+        - name: assignee_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200':
+          description: Paginated task list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Task' }
+
+    post:
+      tags: [Tasks]
+      summary: Create a task (triggers AI suggestion)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, minLength: 1, maxLength: 255 }
+                description: { type: string }
+                priority:
+                  type: string
+                  enum: [low, medium, high]
+                  default: medium
+                due_date: { type: string, format: date-time }
+                assignee_id: { type: string, format: uuid }
+      responses:
+        '201':
+          description: Task created with AI suggestion attached
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Task' }
+
+  /tasks/{id}:
+    get:
+      tags: [Tasks]
+      summary: Get a single task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Task found
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    patch:
+      tags: [Tasks]
+      summary: Update a task (partial)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                status: { type: string, enum: [todo, in_progress, review, done] }
+                priority: { type: string, enum: [low, medium, high] }
+                due_date: { type: string, format: date-time }
+                assignee_id: { type: string, format: uuid }
+                accepted_suggestion: { type: boolean }
+                rejected_suggestion: { type: boolean }
+      responses:
+        '200':
+          description: Task updated
+
+    delete:
+      tags: [Tasks]
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Task deleted
+
+  # ─── AI ─────────────────────────────────────────────────────────────
+  /ai/suggest:
+    post:
+      tags: [AI]
+      summary: Get AI suggestion for a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string }
+                description: { type: string }
+      responses:
+        '200':
+          description: AI suggestion generated
+
+  /ai/draft:
+    post:
+      tags: [AI]
+      summary: Draft a Slack message or PR description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, context]
+              properties:
+                type: { type: string, enum: [slack_message, pr_description, pr_review] }
+                context: { type: string }
+      responses:
+        '200':
+          description: Draft generated

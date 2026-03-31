@@ -1,0 +1,66 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Bash(docker *)",
+      "Bash(docker-compose *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Bash(drop table *)",
+      "Bash(DELETE FROM *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(echo $CLAUDE_TOOL_INPUT | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('command',''))\" 2>/dev/null || echo ''); if echo \"$input\" | grep -qiE \"(AWS_|OPENAI_API_KEY|SECRET_KEY|PASSWORD|PRIVATE_KEY)=[A-Za-z0-9]\"; then echo '[HOOK BLOCKED] Potential secret detected in command. Use env vars instead.' >&2; exit 2; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "path=$(echo $CLAUDE_TOOL_INPUT | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null || echo ''); if echo \"$path\" | grep -qE '\\.env$'; then echo '[HOOK BLOCKED] Never write secrets to .env directly. Edit .env.example and let the user fill values.' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "path=$(echo $CLAUDE_TOOL_INPUT | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null || echo ''); if echo \"$path\" | grep -qE '\\.(js|ts)$' && echo \"$path\" | grep -vqE '(test|spec|__tests__)'; then echo '[HOOK] New source file written. Consider: does this need a test file?'; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[HOOK] Session complete. Reminders: (1) Run tests before committing. (2) Never commit .env. (3) Follow Conventional Commits. (4) Update docs/architecture.md if a design decision changed.'"
+          }
+        ]
+      }
+    ]
+  }
+}
