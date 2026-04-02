@@ -1,0 +1,14 @@
+{
+  "name": "@smartcollab/database",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "migrate": "knex migrate:latest --knexfile knexfile.cjs",
+    "migrate:rollback": "knex migrate:rollback --knexfile knexfile.cjs",
+    "seed": "knex seed:run --knexfile knexfile.cjs"
+  },
+  "dependencies": {
+    "knex": "^3.1.0",
+    "pg": "^8.11.3"
+  }
+}
