@@ -85,3 +85,6 @@ jest_html_reporters.html
 # TypeScript incremental compilation cache
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+
+# Windows crash dumps
+*.stackdump

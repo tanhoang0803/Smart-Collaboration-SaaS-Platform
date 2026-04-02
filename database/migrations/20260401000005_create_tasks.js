@@ -31,7 +31,7 @@ export const up = async (knex) => {
       .string('status', 50)
       .notNullable()
       .defaultTo('todo')
-      .comment("One of: 'todo', 'in_progress', 'done', 'cancelled'");
+      .comment("One of: 'todo', 'in_progress', 'review', 'done'");
 
     table
       .string('priority', 50)
@@ -75,7 +75,7 @@ export const up = async (knex) => {
   await knex.raw(`
     ALTER TABLE tasks
     ADD CONSTRAINT tasks_status_check
-    CHECK (status IN ('todo', 'in_progress', 'done', 'cancelled'))
+    CHECK (status IN ('todo', 'in_progress', 'review', 'done'))
   `);
 
   await knex.raw(`
