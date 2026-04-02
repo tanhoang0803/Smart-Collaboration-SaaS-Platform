@@ -30,5 +30,5 @@ export function onTaskEvent(
   handler: (payload: unknown) => void,
 ) {
   getSocket().on(event, handler);
-  return () => getSocket().off(event, handler);
+  return () => { getSocket().off(event, handler); };
 }
