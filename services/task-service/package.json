@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand",
+    "migrate": "knex --knexfile ../../database/knexfile.cjs migrate:latest",
+    "seed": "knex --knexfile ../../database/knexfile.cjs seed:run"
   },
   "dependencies": {
     "axios": "^1.6.7",
