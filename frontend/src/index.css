@@ -1,0 +1,294 @@
+/* ============================================================
+   CSS Reset + Design Tokens
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary:   #6366f1;
+  --primary-h: #4f46e5;
+  --success:   #22c55e;
+  --warning:   #f59e0b;
+  --danger:    #ef4444;
+  --bg:        #f8fafc;
+  --card:      #ffffff;
+  --border:    #e2e8f0;
+  --text:      #1e293b;
+  --muted:     #64748b;
+  --radius:    8px;
+  --shadow:    0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.app-shell { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 220px;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-nav { padding: 16px 0; flex: 1; }
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: var(--muted);
+  font-weight: 500;
+  transition: background .15s, color .15s;
+  text-decoration: none;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav a.active { background: #f1f5f9; color: var(--primary); }
+
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  height: 56px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.page-body { flex: 1; padding: 24px; overflow-y: auto; }
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.card + .card { margin-top: 16px; }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background .15s, opacity .15s;
+}
+
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+
+.btn-secondary { background: transparent; border-color: var(--border); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: var(--bg); }
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover:not(:disabled) { background: #16a34a; }
+
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.badge-todo        { background: #f1f5f9; color: var(--muted); }
+.badge-in_progress { background: #dbeafe; color: #1d4ed8; }
+.badge-review      { background: #fef9c3; color: #a16207; }
+.badge-done        { background: #dcfce7; color: #166534; }
+
+.badge-low    { background: #f0fdf4; color: #166534; }
+.badge-medium { background: #fefce8; color: #854d0e; }
+.badge-high   { background: #fff7ed; color: #9a3412; }
+.badge-urgent { background: #fef2f2; color: #991b1b; }
+
+/* ============================================================
+   Forms
+   ============================================================ */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+
+.form-group label { font-size: 13px; font-weight: 500; color: var(--text); }
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+  outline: none;
+  transition: border-color .15s;
+}
+
+.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+
+textarea.form-control { resize: vertical; min-height: 80px; }
+
+.form-error { font-size: 12px; color: var(--danger); }
+
+/* ============================================================
+   Auth pages
+   ============================================================ */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.auth-box h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.auth-box p  { color: var(--muted); margin-bottom: 24px; }
+
+/* ============================================================
+   Stat cards
+   ============================================================ */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+.stat-card { text-align: center; }
+.stat-card .stat-value { font-size: 32px; font-weight: 700; color: var(--primary); }
+.stat-card .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* ============================================================
+   Task list
+   ============================================================ */
+.task-list { display: flex; flex-direction: column; gap: 12px; }
+
+.task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+
+.task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+
+.task-card-body { flex: 1; }
+.task-card-title { font-weight: 600; margin-bottom: 4px; }
+.task-card-meta  { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.task-card-due { font-size: 12px; color: var(--muted); }
+.task-card-ai-pill {
+  font-size: 11px;
+  background: #ede9fe;
+  color: #6d28d9;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Filter bar
+   ============================================================ */
+.filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   AI Suggestion Panel
+   ============================================================ */
+.ai-panel {
+  border: 1px solid #c4b5fd;
+  background: #faf5ff;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.ai-panel h3 { font-size: 14px; font-weight: 700; color: #6d28d9; margin-bottom: 8px; }
+.ai-panel-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ============================================================
+   Integrations grid
+   ============================================================ */
+.integrations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+
+.integration-card { position: relative; }
+.integration-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.integration-icon { font-size: 28px; }
+.integration-name { font-size: 16px; font-weight: 600; }
+.integration-status { font-size: 12px; color: var(--muted); }
+.integration-status.connected { color: var(--success); font-weight: 600; }
+.integration-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ============================================================
+   Utilities
+   ============================================================ */
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.page-header h1 { font-size: 22px; font-weight: 700; }
+.error-msg { color: var(--danger); font-size: 13px; margin-top: 8px; }
+.loading { color: var(--muted); font-size: 14px; }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
