@@ -1,0 +1,119 @@
+# =============================================================================
+# Smart Collaboration SaaS Platform — Prometheus Scrape Configuration
+# =============================================================================
+# All services expose /metrics (prom-client format)
+# Scrape interval: 15s  |  Evaluation interval: 15s
+# =============================================================================
+
+global:
+  scrape_interval:     15s   # How frequently to scrape targets
+  evaluation_interval: 15s   # How frequently to evaluate rules
+  scrape_timeout:      10s
+
+  # Attach these labels to every time series and alert sent to external systems
+  external_labels:
+    environment: 'production'
+    project:     'smart-collaboration'
+
+# =============================================================================
+# Alerting (Alertmanager — wire up when Alertmanager is deployed)
+# =============================================================================
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# =============================================================================
+# Rule files — alert rules and recording rules
+# =============================================================================
+# rule_files:
+#   - /etc/prometheus/rules/*.yml
+
+# =============================================================================
+# Scrape configurations
+# =============================================================================
+scrape_configs:
+
+  # ---------------------------------------------------------------------------
+  # API Gateway :8080
+  # ---------------------------------------------------------------------------
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:8080']
+        labels:
+          service: 'api-gateway'
+          layer: 'edge'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ---------------------------------------------------------------------------
+  # Auth Service :3001
+  # ---------------------------------------------------------------------------
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:3001']
+        labels:
+          service: 'auth-service'
+          layer: 'application'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ---------------------------------------------------------------------------
+  # Task Service :3002
+  # ---------------------------------------------------------------------------
+  - job_name: 'task-service'
+    static_configs:
+      - targets: ['task-service:3002']
+        labels:
+          service: 'task-service'
+          layer: 'application'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ---------------------------------------------------------------------------
+  # Integration Service :3003
+  # ---------------------------------------------------------------------------
+  - job_name: 'integration-service'
+    static_configs:
+      - targets: ['integration-service:3003']
+        labels:
+          service: 'integration-service'
+          layer: 'application'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ---------------------------------------------------------------------------
+  # AI Service :3004
+  # Scrape more frequently to track token usage / cost spikes
+  # ---------------------------------------------------------------------------
+  - job_name: 'ai-service'
+    static_configs:
+      - targets: ['ai-service:3004']
+        labels:
+          service: 'ai-service'
+          layer: 'application'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # ---------------------------------------------------------------------------
+  # Prometheus self-scrape
+  # ---------------------------------------------------------------------------
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          layer: 'observability'
+    metrics_path: '/metrics'
+
+  # ---------------------------------------------------------------------------
+  # Node Exporter — host-level CPU / memory / disk metrics
+  # ---------------------------------------------------------------------------
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          layer: 'infrastructure'
+    metrics_path: '/metrics'
+    scrape_interval: 30s

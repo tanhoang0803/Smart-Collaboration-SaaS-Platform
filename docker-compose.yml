@@ -1,0 +1,277 @@
+version: '3.8'
+
+# =============================================================================
+# Smart Collaboration SaaS Platform — Local Development Compose
+# =============================================================================
+# Usage:
+#   docker-compose up -d          # start all services
+#   docker-compose logs -f        # tail all logs
+#   docker-compose exec task-service npm run migrate
+#   docker-compose exec task-service npm run seed
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure: PostgreSQL 16
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartcollab}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-smartcollab}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure: Redis 7
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Auth Service :3001
+  # ---------------------------------------------------------------------------
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Task Service :3002
+  # ---------------------------------------------------------------------------
+  task-service:
+    build:
+      context: ./services/task-service
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      PORT: 3002
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3002/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Integration Service :3003
+  # ---------------------------------------------------------------------------
+  integration-service:
+    build:
+      context: ./services/integration-service
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      PORT: 3003
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # AI Service :3004
+  # ---------------------------------------------------------------------------
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      PORT: 3004
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "3004:3004"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # API Gateway :8080
+  # ---------------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      PORT: 8080
+      NODE_ENV: ${NODE_ENV:-development}
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-service:
+        condition: service_started
+      task-service:
+        condition: service_started
+      integration-service:
+        condition: service_started
+      ai-service:
+        condition: service_started
+    networks:
+      - internal
+      - public
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Frontend (React SPA) :3000
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+    networks:
+      - public
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Nginx (reverse proxy, HTTPS termination)
+  # ---------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      api-gateway:
+        condition: service_started
+      frontend:
+        condition: service_started
+    networks:
+      - internal
+      - public
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Prometheus :9090
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Grafana :3005
+  # Note: auth-service already uses host port 3001, Grafana maps to 3005.
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3005:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - internal
+    restart: unless-stopped
+
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  # internal: service-to-service communication, not exposed to host network
+  internal:
+    internal: true
+  # public: services that need to be reachable from the host / internet
+  public:
+    internal: false

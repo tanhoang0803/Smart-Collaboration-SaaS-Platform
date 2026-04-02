@@ -1,0 +1,98 @@
+name: Deploy
+
+# Triggered on every push to main — assumes build-images in ci.yml has already
+# pushed the :latest images to ghcr.io as part of the same merge.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    # Gate behind the production environment (requires manual approval if
+    # configured in GitHub repo settings → Environments → production).
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # Backend services — Render deploy hooks
+      # Each hook URL is stored as a GitHub secret and triggers a new deploy
+      # of the corresponding Render web service.
+      # -----------------------------------------------------------------------
+      - name: Deploy auth-service to Render
+        run: |
+          curl --silent --fail --show-error \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_AUTH }}"
+
+      - name: Deploy api-gateway to Render
+        run: |
+          curl --silent --fail --show-error \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_GATEWAY }}"
+
+      - name: Deploy task-service to Render
+        run: |
+          curl --silent --fail --show-error \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_TASK }}"
+
+      - name: Deploy ai-service to Render
+        run: |
+          curl --silent --fail --show-error \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_AI }}"
+
+      - name: Deploy integration-service to Render
+        run: |
+          curl --silent --fail --show-error \
+            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_INTEGRATION }}"
+
+      # -----------------------------------------------------------------------
+      # Frontend — Vercel (production deployment)
+      # -----------------------------------------------------------------------
+      - name: Deploy Frontend to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token:      ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id:     ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'
+
+      # -----------------------------------------------------------------------
+      # Post-deploy health checks — give services 30s to come up before probing
+      # -----------------------------------------------------------------------
+      - name: Wait for services to stabilise
+        run: sleep 30
+
+      - name: Health check — api-gateway
+        run: |
+          curl --silent --fail --show-error \
+            "${{ secrets.PRODUCTION_API_URL }}/healthz" \
+            || (echo "api-gateway health check failed" && exit 1)
+
+      - name: Health check — auth-service (via gateway)
+        run: |
+          curl --silent --fail --show-error \
+            "${{ secrets.PRODUCTION_API_URL }}/api/v1/auth/health" \
+            || (echo "auth-service health check failed" && exit 1)
+
+      - name: Health check — task-service (via gateway)
+        run: |
+          curl --silent --fail --show-error \
+            "${{ secrets.PRODUCTION_API_URL }}/api/v1/tasks/health" \
+            || (echo "task-service health check failed" && exit 1)
+
+      # -----------------------------------------------------------------------
+      # Deployment summary
+      # -----------------------------------------------------------------------
+      - name: Notify deployment success
+        run: |
+          echo "========================================="
+          echo "Deployment complete"
+          echo "Commit : ${{ github.sha }}"
+          echo "Author : ${{ github.actor }}"
+          echo "Branch : ${{ github.ref_name }}"
+          echo "Time   : $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          echo "========================================="

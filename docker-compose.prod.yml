@@ -1,0 +1,80 @@
+version: '3.8'
+
+# =============================================================================
+# Smart Collaboration SaaS Platform — Production Overrides
+# =============================================================================
+# Usage (always compose with base file):
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# What this file does:
+#   - Removes host port bindings for all internal services (only nginx exposes
+#     ports 80 and 443 to the outside world)
+#   - Sets restart: always on every service (recover automatically after crash
+#     or host reboot)
+#   - Forces NODE_ENV=production for all Node.js services
+# =============================================================================
+
+services:
+
+  postgres:
+    restart: always
+    # No host port binding — reachable only on the internal Docker network
+    ports: []
+
+  redis:
+    restart: always
+    ports: []
+
+  auth-service:
+    restart: always
+    ports: []
+    environment:
+      NODE_ENV: production
+
+  task-service:
+    restart: always
+    ports: []
+    environment:
+      NODE_ENV: production
+
+  integration-service:
+    restart: always
+    ports: []
+    environment:
+      NODE_ENV: production
+
+  ai-service:
+    restart: always
+    ports: []
+    environment:
+      NODE_ENV: production
+
+  api-gateway:
+    restart: always
+    # Removed direct host exposure — all traffic goes through nginx
+    ports: []
+    environment:
+      NODE_ENV: production
+
+  frontend:
+    restart: always
+    # Nginx serves frontend static assets; no direct host port needed
+    ports: []
+
+  nginx:
+    restart: always
+    # nginx is the ONLY public entry point
+    ports:
+      - "80:80"
+      - "443:443"
+
+  prometheus:
+    restart: always
+    # Monitoring not exposed publicly in production
+    ports: []
+
+  grafana:
+    restart: always
+    # Access Grafana through a secured reverse proxy path in production;
+    # not directly exposed here. Uncomment and restrict with auth if needed.
+    ports: []
