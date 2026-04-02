@@ -61,6 +61,32 @@ Built to showcase **senior-architect thinking**: not just "it works" but deliber
 
 ---
 
+## Build Status
+
+| Service | Port | Status |
+|---|---|---|
+| `api-gateway` | 8080 | ✅ JWT validation, rate-limit, tenant resolver, proxy |
+| `auth-service` | 3001 | ✅ JWT RS256, refresh rotation, OAuth2 (GitHub/Google), RBAC |
+| `task-service` | 3002 | ✅ CRUD, AI suggestion fire-and-forget, Redis pub/sub, audit log |
+| `integration-service` | 3003 | ✅ Slack/GitHub/Trello/Google Calendar connectors, webhooks, OAuth |
+| `ai-service` | 3004 | ✅ OpenAI/HuggingFace adapters, suggest/draft/review endpoints |
+
+**Frontend (`frontend/`):**
+- React 18 + TypeScript + Vite
+- Redux Toolkit (auth, tasks, AI, integrations slices)
+- React Query for server-state + optimistic updates
+- Socket.io-client for real-time task events
+- Pages: Login, Register, Dashboard, Tasks, Task Detail, Integrations
+- Human-in-the-loop AI suggestion accept/dismiss UI
+
+**Infrastructure:**
+- `docker-compose.yml` + `docker-compose.prod.yml`
+- Nginx reverse proxy, Prometheus, Grafana
+- GitHub Actions CI (lint → test → build images) + CD (deploy to Render/Vercel)
+- Database migrations (Knex), seed data, canonical schema
+
+---
+
 ## Services
 
 | Service | Port | Responsibility |

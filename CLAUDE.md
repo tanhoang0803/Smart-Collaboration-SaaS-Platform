@@ -5,6 +5,22 @@
 
 ---
 
+## 0. Build Status (as of 2026-04-02)
+
+| Service | Port | Status |
+|---|---|---|
+| `api-gateway` | 8080 | ✅ JWT validation, rate-limit, tenant resolver, proxy |
+| `auth-service` | 3001 | ✅ JWT RS256, refresh rotation, OAuth2 (GitHub/Google), RBAC |
+| `task-service` | 3002 | ✅ CRUD, AI suggestion fire-and-forget, Redis pub/sub, audit log |
+| `integration-service` | 3003 | ✅ Slack/GitHub/Trello/Google Calendar connectors, webhooks, OAuth |
+| `ai-service` | 3004 | ✅ OpenAI/HuggingFace adapters, suggest/draft/review endpoints |
+
+**Frontend (`frontend/`):** React 18 + TypeScript + Vite, Redux Toolkit (auth/tasks/AI/integrations slices), React Query, Socket.io-client, human-in-the-loop AI suggestion UI.
+
+**Infrastructure:** `docker-compose.yml` + `docker-compose.prod.yml`, Nginx, Prometheus, Grafana, GitHub Actions CI/CD (lint → test → build images → deploy to Render/Vercel), Knex migrations + seed data.
+
+---
+
 ## 1. Project Identity
 
 | Field       | Value                                                          |
