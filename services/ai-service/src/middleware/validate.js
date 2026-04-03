@@ -4,33 +4,24 @@
 // Usage:
 //   router.post('/suggest', validate(suggestSchema), controller.suggest);
 //
-// On failure: returns 400 with the first Zod error message and the full
-// errors array for clients that need field-level feedback.
+// On failure: passes a 400 AppError to next() so the global error handler
+// formats the response consistently.
 // On success: replaces req.body with the Zod-parsed (and coerced) data so
 // controllers always receive clean, typed input.
 // =============================================================================
+
+import { AppError } from '../utils/AppError.js';
 
 /**
  * @param {import('zod').ZodTypeAny} schema
  * @returns {import('express').RequestHandler}
  */
-export const validate = (schema) => (req, res, next) => {
+export const validate = (schema) => (req, _res, next) => {
   const result = schema.safeParse(req.body);
 
   if (!result.success) {
-    const errors = result.error.errors;
-    return res.status(400).json({
-      success: false,
-      error: {
-        code: 'VALIDATION_ERROR',
-        message: errors[0]?.message ?? 'Invalid request body',
-        details: errors.map((e) => ({
-          field: e.path.join('.'),
-          message: e.message,
-          code: e.code,
-        })),
-      },
-    });
+    const message = result.error.errors[0]?.message ?? 'Invalid request body';
+    return next(new AppError(message, 400, 'VALIDATION_ERROR'));
   }
 
   // Replace req.body with the Zod-parsed output (coerced types, defaults applied)
