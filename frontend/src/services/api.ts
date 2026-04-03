@@ -33,8 +33,8 @@ api.interceptors.response.use(
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<{ data: { accessToken: string; user: { id: string; email: string; role: string; tenantId: string } } }>('/auth/login', { email, password }),
-  register: (email: string, password: string, tenantSlug: string) =>
-    api.post('/auth/register', { email, password, tenantSlug }),
+  register: (name: string, email: string, password: string) =>
+    api.post('/auth/register', { name, email, password }),
   refresh: () => api.post('/auth/refresh'),
   logout: () => api.post('/auth/logout'),
 };

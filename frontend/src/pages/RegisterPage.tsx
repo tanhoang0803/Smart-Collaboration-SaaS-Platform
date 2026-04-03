@@ -7,12 +7,12 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [tenantSlug, setTenantSlug] = useState('');
+  const [name, setName] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      await register(email, password, tenantSlug);
+      await register(name, email, password);
       navigate('/login');
     } catch { /* error shown via Redux state */ }
   }
@@ -24,10 +24,10 @@ export default function RegisterPage() {
         <p>Set up your SmartCollab workspace</p>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Workspace slug</label>
-            <input className="form-control" value={tenantSlug}
-              onChange={(e) => setTenantSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-              placeholder="my-company" required />
+            <label>Workspace name</label>
+            <input className="form-control" value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="My Company" required />
           </div>
           <div className="form-group">
             <label>Email</label>

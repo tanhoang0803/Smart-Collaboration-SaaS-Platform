@@ -20,10 +20,10 @@ export function useAuth() {
     }
   }
 
-  async function register(email: string, password: string, tenantSlug: string) {
+  async function register(name: string, email: string, password: string) {
     dispatch(setLoading(true));
     try {
-      await authApi.register(email, password, tenantSlug);
+      await authApi.register(name, email, password);
       dispatch(setLoading(false));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })

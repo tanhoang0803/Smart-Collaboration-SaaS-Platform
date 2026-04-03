@@ -87,8 +87,8 @@ jobs:
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/smartcollab_test
           DATABASE_URL_TEST: postgresql://testuser:testpass@localhost:5432/smartcollab_test
           REDIS_URL: redis://localhost:6379
-          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY_TEST }}
-          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY_TEST }}
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
           # 64-char hex key for AES-256-GCM — safe hardcoded value for tests only
           ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000001
           OPENAI_API_KEY: test-key
